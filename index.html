@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        .circle-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .circle-btn:hover {
+            background-color: #45a049;
+        }
+
+        .output-box {
+            margin-top: 20px;
+            padding: 20px;
+            width: 300px;
+            height: 100px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            overflow-y: auto;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="start-btn" class="circle-btn">Start Listening</button>
+        <div id="output" class="output-box"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('start-btn');
+            const outputBox = document.getElementById('output');
+            let recognition;
+
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+            } else if ('SpeechRecognition' in window) {
+                recognition = new SpeechRecognition();
+            } else {
+                alert('Your browser does not support speech recognition.');
+            }
+
+            if (recognition) {
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    startBtn.textContent = 'Listening...';
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    outputBox.textContent = transcript;
+                    saveTranscript(transcript);
+                };
+
+                recognition.onerror = function(event) {
+                    outputBox.textContent = 'Error occurred in recognition: ' + event.error;
+                };
+
+                recognition.onend = function() {
+                    startBtn.textContent = 'Start Listening';
+                };
+
+                startBtn.addEventListener('click', function() {
+                    recognition.start();
+                });
+            }
+
+            function saveTranscript(transcript) {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", "save_transcript.php", true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        console.log(xhr.responseText);
+                    }
+                };
+                xhr.send("transcript=" + encodeURIComponent(transcript));
+            }
+        });
+    </script>
+</body>
+</html>
